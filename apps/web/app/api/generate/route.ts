@@ -1,7 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { kv } from "@vercel/kv";
 import { OpenAIStream, StreamingTextResponse } from "ai";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { match } from "ts-pattern";
 
@@ -11,12 +11,9 @@ import { match } from "ts-pattern";
 export const runtime = "edge";
 
 export async function POST(req: Request): Promise<Response> {
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
-  });
+  const groq = new Groq();
   // Check if the OPENAI_API_KEY is set, if not return 400
-  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === "") {
+  if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === "") {
     return new Response("Missing OPENAI_API_KEY - make sure to add it to your .env file.", {
       status: 400,
     });
@@ -122,8 +119,8 @@ export async function POST(req: Request): Promise<Response> {
     ])
     .run() as ChatCompletionMessageParam[];
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
+  const response = await groq.chat.completions.create({
+    model: "llama3-8b-8192",
     stream: true,
     messages,
     temperature: 0.7,
